@@ -11,11 +11,14 @@ from panda3d.core import CollisionTraverser, CollisionHandlerPusher
 
 class myApp(ShowBase):
     def __init__(self):
+        # the base where everything is activated
         ShowBase.__init__(self)
         self.SetScene()
+        self.SetCamera()
         fullCycle = 60
         circSpace = 0
         for j in range(fullCycle):
+            # putting all the drones in place
             Drone.droneCount += 1
             nickname = "Drone" + str(Drone.droneCount)
             curCircSpace = circSpace
@@ -27,8 +30,8 @@ class myApp(ShowBase):
             self.DrawCircleZ(self.redPlanet, nickname, curCircSpace)
             # not too sure why X is being weird while Y and Z are working just fine, but it works so
             circSpace += 0.167
-        
-        self.SetCamera()
+
+        # setting up all the collision traverser stuff
         self.cTrav = CollisionTraverser()
         self.cTrav.traverse(self.render)
         self.pusher = CollisionHandlerPusher()
@@ -36,6 +39,7 @@ class myApp(ShowBase):
         self.cTrav.addCollider(self.player.collisionNode, self.pusher)
         self.cTrav.showCollisions(self.render)
         
+    # the next five put in the drone's position and where they all go in the scene
     def DrawBaseballSeams(self, centralObject, droneName, step, numSeams, radius = 1):
         unitVec = DefPath.BaseballSeams(step, numSeams, B=0.4)
         unitVec.normalize()
@@ -66,11 +70,13 @@ class myApp(ShowBase):
         position = unitVec * 200 + centralObject.modelNode.getPos()
         Drone(self.loader, 'Assets/DroneDefender/DroneDefender.obj', self.render, droneName, 'Assets/DroneDefender/TC.jpg', position, 10)
     
+    # making sure the camera is in the right place
     def SetCamera(self):
         self.disableMouse()
         self.camera.reparentTo(self.player.modelNode)
         self.camera.setFluidPos(0, 1, 0)
     
+    # setting up the scene so everything is working
     def SetScene(self):
         self.Universe = Universe(self.loader, "Assets/Universe/Universe.x", self.render, 'Universe', 'Assets/Universe/starfield-in-blue.jpg', 15000)
 

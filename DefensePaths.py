@@ -4,7 +4,7 @@ from panda3d.core import NodePath
 from panda3d.core import Vec3
 
 def Cloud(radius = 1):
-    # making the Cloud defense path
+    # making the defense path shaped like a cloud
     x = 2 * random.random() - 1
     y = 2 * random.random() - 1
     z = 2 * random.random() - 1
@@ -15,7 +15,7 @@ def Cloud(radius = 1):
     return unitVec * radius
 
 def BaseballSeams(step, numSeams, B, F=1):
-    # making a defense path that looks like baseball seems
+    # making the defense path shaped like baseball seams
     time = step / float(numSeams) * 2 * math.pi
     F4 = 0
     R = 1
@@ -30,8 +30,8 @@ def BaseballSeams(step, numSeams, B, F=1):
 
     return Vec3(x, y, z)
 
-# the following three put a ring around the object where one factor doesn't change from zero
 def CircleX(t):
+    # making a defense path that changes its y and z positions (and also doesn't want to cooperate)
     x = 0.0 * math.cos(t)
     y = 50.0 * math.sin(t)
     z = 50.0 * math.tan(t)
@@ -42,6 +42,7 @@ def CircleX(t):
     return unitVec
 
 def CircleY(t):
+    # making a defense path that changes its x and z positions 
     x = 50.0 * math.cos(t)
     y = 0.0 * math.sin(t)
     z = 50.0 * math.tan(t)
@@ -52,6 +53,7 @@ def CircleY(t):
     return unitVec
 
 def CircleZ(t):
+    # making a defense path that changes its x and y positions
     x = 50.0 * math.cos(t)
     y = 50.0 * math.sin(t)
     z = 0.0 * math.tan(t)

@@ -7,10 +7,9 @@ from panda3d.core import Vec3
 class Drone(SphereCollideObject):
     # how many drones spawned
     droneCount = 0
-    # setting up the drones
     def __init__(self, loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float):
+        # setting up drone collision, model, position, scale, and texture
         super(Drone, self).__init__(loader, modelPath, parentNode, nodeName, Vec3(0,0,0), 3)
-        #self.modelNode = loader.loadModel(modelPath)
         self.modelNode.reparentTo(parentNode)
         self.modelNode.setPos(posVec)
         self.modelNode.setScale(scaleVec)

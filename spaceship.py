@@ -6,14 +6,15 @@ from direct.task import Task
 from typing import Callable
 from bullets import Missile
 from direct.gui.OnscreenImage import OnscreenImage
+from panda3d.core import TransparencyAttrib
 
 class Spaceship (SphereCollideObject):
     def __init__(self, loader: Loader, modelPath: str, parentNode: NodePath, nodeName: str, texPath: str, posVec: Vec3, scaleVec: float, manager: Task, accept: Callable[[str, Callable], None]):
+        # setting up the player's collision, model, position, texture, and scale, plus making stuff equal to other stuff so everything else works
         super(Spaceship, self).__init__(loader, modelPath, parentNode, nodeName, Vec3(0,0,0), 1)
-        #self.modelNode = loader.loadModel(modelPath)
-        # setting all the stuff up from the init
         self.render = parentNode
         self.modelNode.reparentTo(parentNode)
+        self.loader = loader
         self.accept = accept
         self.modelNode.setPos(posVec)
         self.modelNode.setScale(scaleVec)
@@ -21,16 +22,16 @@ class Spaceship (SphereCollideObject):
         tex = loader.loadTexture(texPath)
         self.modelNode.setTexture(tex, 1)
         self.taskManager = manager
-        self.loader = Loader
 
-        # missile stuff
-        self.reloadTime = .25
+        # the stuff the missiles needs
+        self.reloadTime = 0.25
         self.missileDist = 4000
         self.missileBay = 1
-        #self.taskManager.add(self.CheckIntervals, 'checkMissiles', 34)
+        self.taskManager.add(self.CheckIntervals, 'checkMissiles', 34)
 
-        # enabling key bindings and hud
+        # enabling stuff that's attached to the player, like key binds
         self.keyBinds()
+        self.EnableHUD()
     
     def keyBinds(self):
         # all bindings for movement
@@ -48,8 +49,11 @@ class Spaceship (SphereCollideObject):
         self.accept('arrow_left-up', self.RollLeft, [0])
         self.accept('arrow_right', self.RollRight, [1])
         self.accept('arrow_right-up', self.RollRight, [0])
+
+        # the attack button 
         self.accept('f', self.Fire)
     
+    # the following is a lot of functions to make the movement actually move
     def Thrust(self, keyDown):
         if keyDown:
             self.taskManager.add(self.ApplyThrust, 'forward-thrust') 
@@ -134,56 +138,53 @@ class Spaceship (SphereCollideObject):
         self.modelNode.setFluidPos(self.modelNode.getPos() + traj * rate)
         return Task.cont
     
+    # all the functions the player needs to make sure the missile goes off
     def Fire(self):
         if self.missileBay:
             travRate = self.missileDist
             aim = self.render.getRelativeVector(self.modelNode, Vec3.forward())
             aim.normalize()
-
-            fireSolution = aim * travRate
+            fireSol = aim * travRate
             inFront = aim * 150
-
-            travVec = fireSolution + self.modelNode.getPos()
+            travec = fireSol + self.modelNode.getPos()
             self.missileBay -= 1
             name = 'Missile' + str(Missile.missileCount)
-
             posVec = self.modelNode.getPos() + inFront
             currMissile = Missile(self.loader, 'Assets/Phaser/phaser.egg', self.render, name, posVec, 4.0)
-
-    #         Missile.Intervals[name] = currMissile.modelNode.posInterval(2.0, travVec, startPos = posVec, fluid = 1)
-
-    #         Missile.Intervals[name].start()
-        
-    #     else:
-    #         if not self.taskManager.hasTaskNamed('reload'):
-    #             print("init reload...")
-    #             self.taskManager.doMethodLater(0, self.Reload, 'reload')
-    #             return Task.Cont
+            Missile.Intervals[name] = currMissile.modelNode.posInterval(2.0, travec, startPos = posVec, fluid = 1)
+            Missile.Intervals[name].start()
+        else:
+            if not self.taskManager.hasTaskNamed('reload'):
+                print("starting reload")
+                self.taskManager.doMethodLater(0, self.Reload, 'reload')
+                return Task.cont
+            
+    def Reload(self, task):
+        if task.time > self.reloadTime:
+            self.missileBay += 1
+            print("reload complete")
+            return Task.done
+        elif task.time <= self.reloadTime:
+            print("reload proceeding")
+            return Task.cont
+        if self.missileBay > 1:
+            self.missileBay = 1
     
-    # def Reload(self, task):
-    #     if task.time() > self.reloadTime:
-    #         self.missileBay += 1
-    #         print("Reload complete.")
-    #         return Task.done
-    #     elif task.time() <= self.reloadTime:
-    #         print("reload proceeding....")
-    #         return Task.cont
-    #     if self.missileBay > 1:
-    #         self.missileBay = 1
-    
-    # def CheckIntervals(self, task):
-    #     for i in Missile.Intervals:
-    #         if not Missile.Intervals[i].isPlaying():
-    #             Missile.cNodes[i].detachNode()
-    #             Missile.fireModels[i].detachNode()
-    #             del Missile.Intervals[i]
-    #             del Missile.cNodes[i]
-    #             del Missile.fireModels[i]
-    #             del Missile.collisionSolids[i]
-    #             print (i + " has reached the end of its firing solution")
-    #             break
-    #     return Task.cont
+    def CheckIntervals(self, task):
+        for i in Missile.Intervals:
+            if not Missile.Intervals[i].isPlaying():
+                Missile.cNodes[i].detachNode()
+                Missile.fireModels[i].detachNode()
 
-    # def EnableHUD(self):
-    #     self.HUD = OnscreenImage(image = 'Assets/Hud/Reticle3b.png', pos = Vec3(0,0,0), scale = 0.1)
-    #     self.HUD.setTransparency(TransparencyAttrib.MAplha)
+                del Missile.Intervals[i]
+                del Missile.fireModels[i]
+                del Missile.cNodes[i]
+                del Missile.collisionSolids[i]
+                print (i + " has reached the end of the fire solution")
+                break
+        return Task.cont
+    
+    # hey look a heads up display
+    def EnableHUD(self):
+        self.hud = OnscreenImage("Assets/Hud/Reticle3b.png", pos = Vec3(0,0,0), scale = 0.1)
+        self.hud.setTransparency(TransparencyAttrib.MAlpha)
